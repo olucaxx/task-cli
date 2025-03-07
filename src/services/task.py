@@ -1,71 +1,132 @@
-from data import load_tasks, save_tasks
-from models import Task
+import src.controllers.task as controller
+from inspect import cleandoc
 
-tasks = load_tasks()
-
-def add_task(description: str) -> int:
-    Task.current_id = tasks['current_task_id']
-    tasks['tasks'].append(vars(Task(description)))
-    tasks['current_task_id'] = Task.current_id
-    save_tasks(tasks)
-    return f"Task added successfully (ID: {Task.current_id - 1})"
-
+def add_task(args: list):
+    if not args:
+        print("You need to give a description for your task.")  
+        return
     
-def update_task_description(new_description: str, task_id: int) -> str:
-    try:
-        for task in tasks['tasks']:
-            if task['id'] == task_id:
-                task_obj = Task.from_dict(task)
-                task_obj.update_description(new_description.strip())
-                task.update(vars(task_obj))
-        save_tasks(tasks)
-        return f"Task ({task_id}) was updated!"
+    if len(args) >= 2:
+        print(f"Too many arguments, expected 1, got {len(args)}.")
+        return
     
-    except ValueError:
-        return f"'{new_description}' is not a valid name."
+    print(controller.add_task(args[0]))
 
 
-def update_task_status(new_status: int, task_id: int) -> str:
-    try:
-        for task in tasks['tasks']:
-            if task['id'] == task_id:
-                task_obj = Task.from_dict(task)
-                task_obj.update_status(new_status)
-                task.update(vars(task_obj))
-        save_tasks(tasks)
-        return f"Task ({task_id}) was updated!"
+def update_task(args: list):
+    if not args or len(args) < 2:
+        print("You need to type the ID and a new description for your task.")
+        return
     
-    except ValueError:
-        return f"{new_status} is not a valid status."
+    if len(args) >= 3:
+        print(f"Too many arguments, expected 2, got {len(args)}.")
+        return
+
+    print(controller.update_task_description(args[1], args[0]))
 
 
-def delete_task(task_id: int) -> str:
-    for task in tasks['tasks']:
-        if task['id'] == task_id:
-            del task
-            save_tasks(tasks)
-            return f"Task ({task_id}) was deleted!"
+def delete_task(args: list):
+    if not args:
+        print("You need to type the ID of your task.")
+        return
+    
+    if len(args) >= 2:
+        print(f"Too many arguments, expected 1, got {len(args)}.")
+        return
+
+    print(controller.delete_task(int(args[0])))
+    
+
+def mark_in_progress(args: list):
+    if not args:
+        print("You need to type the ID of your task.")
+        return
+    
+    if len(args) >= 2:
+        print(f"Too many arguments, expected 1, got {len(args)}.")
+        return
+
+    print(controller.update_task_status(1, args[0]))
+
+
+def mark_done(args: list):
+    if not args:
+        print("You need to type the ID of your task.")
+        return
+    
+    if len(args) >= 2:
+        print(f"Too many arguments, expected 1, got {len(args)}.")
+        return
+
+    print(controller.update_task_status(2, args[0]))
+
+
+def list_tasks(args: list):
+    if not args:
+        for task in controller.list_all_tasks():
+            print(task)
+        return
+    
+    if len(args) >= 2:
+        print(f"Too many arguments, expected 1, got {len(args)}.")
+        return
+    
+    match args[0]:        
+        case "todo":
+            for task in controller.list_tasks_by_status(0):
+                print(task)
+            return
         
-    return f"Couldn't find a task with id ({task_id})."
+        case "in-progress":
+            for task in controller.list_tasks_by_status(1):
+                print(task)
+            return
+        
+        case "done":
+            for task in controller.list_tasks_by_status(2):
+                print(task)
+            return
+        
+        case _:
+            print(f"Couldn't resolve \"{args[0]}\".")
+            return
+    
 
+def reset_tasks():
+    print("Are you sure you want to delete all your history? This cannot be undone.")
+    confirm = input("If so, please type \"I am sure\": ").strip()
+    
+    if confirm == "I am sure":
+        print(controller.reset_tasks())
+        return
+    
+    print(f"You typed \"{confirm}\", operation cancelled.")
+    
+    
+def help_command():
+    print(cleandoc(
+        '''
+        Usage: 
+            task-cli.py [COMMAND] [ARGS]
+        
+        Commands:
+            add "DESCRIPTION"         Add a new task with the given description.
+            update ID "DESCRIPTION"   Update the description of the task with the given ID.
+            delete ID                 Delete the task with the specified ID.
+            mark-in-progress ID       Mark the task with the given ID as "in progress".
+            mark-done ID              Mark the task with the given ID as "done".
+            list                      List all tasks.
+            list [STATUS]             List tasks filtered by status (todo, in-progress, done).
+            reset-tasks               Remove all tasks and reset task IDs.
 
-def list_all_tasks() -> list[str]:
-    result = []
-    for task in tasks['tasks']:
-        result.append(str(Task.from_dict(task)))
-    return result
+        Arguments:
+            ID      A unique number assigned to each task, used to identify and manage tasks.
+            STATUS  The current state of a task. Can be one of the following:
+                    - todo: The task is yet to be started.
+                    - in-progress: The task is currently being worked on.
+                    - done: The task has been completed.
 
-
-def list_tasks_by_status(status: int) -> list[str]:
-    result = []
-    for task in tasks['tasks']:
-        if task['status'] == status:
-            task_obj = Task.from_dict(task)
-            result.append(str(task_obj))
-    return result
-
-
-def reset_tasks() -> str:
-    save_tasks({"current_task_id":1, "tasks":[]})
-    return "All tasks were deleted and id was reseted to (1)."
+        For more information, visit: https://github.com/olucaxx/task-cli
+        '''
+        ))
     
