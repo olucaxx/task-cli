@@ -110,6 +110,7 @@ def help_command():
             task-cli.py [COMMAND] [ARGS]
         
         Commands:
+            help                      Shows a help page of how to use the code.
             add "DESCRIPTION"         Add a new task with the given description.
             update ID "DESCRIPTION"   Update the description of the task with the given ID.
             delete ID                 Delete the task with the specified ID.
